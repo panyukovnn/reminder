@@ -1,0 +1,33 @@
+
+server:
+  port: 8008
+  servlet:
+    context-path: /${spring.application.name}
+
+spring:
+  application:
+    name: reminder
+  webflux:
+    base-path: ${spring.application.name}
+  boot:
+    admin:
+      client:
+        url: ${SBA_SERVER_URL}
+        username: ${SBA_SERVER_USER}
+        password: ${SBA_SERVER_PASSWORD}
+        instance:
+          service-url: http://host.docker.internal:${server.port}/${spring.application.name}
+
+reminder:
+  bot-token: ${TG_BOT_TOKEN} # Токен бота
+  bot-name: ${TG_BOT_NAME} # Имя бота
+  debug-chat-id: ${TG_DEBUG_GROUP_CHAT_ID} # Идентификатор чата для информирования об исключительных ситуациях
+  send-messages: true  # Признак отправки сообщения
+  notification-config-path: ${GITHUB_PROJECT_CONFIGS_PATH}
+  github-project-configs-token: ${GITHUB_PROJECT_CONFIGS_TOKEN}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.1.2'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+}
+
+group = "ru.panyukovnn"
+version = "1.0.0"
+
+java {
+    sourceCompatibility = '17'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation "org.springframework.boot:spring-boot-starter-webflux"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-validation"
+
+    implementation 'com.google.guava:guava:31.1-jre'
+
+    implementation 'io.netty:netty-all'
+
+    implementation 'de.codecentric:spring-boot-admin-starter-client:3.2.1'
+
+    implementation 'org.telegram:telegrambots:6.5.0';
+    implementation 'org.telegram:telegrambots-meta:6.5.0';
+    implementation 'org.telegram:telegrambotsextensions:6.5.0';
+    implementation 'org.telegram:telegrambots-spring-boot-starter:6.5.0'
+
+    compileOnly             "org.projectlombok:lombok"
+    annotationProcessor     "org.projectlombok:lombok"
+    testCompileOnly         "org.projectlombok:lombok"
+    testAnnotationProcessor "org.projectlombok:lombok"
+}
+
+bootJar {
+    archiveFileName = "reminder.jar"
+}
+
+tasks.withType(Test) {
+    systemProperty "file.encoding", "UTF-8"
+}
