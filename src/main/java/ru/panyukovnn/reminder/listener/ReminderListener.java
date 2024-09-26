@@ -2,53 +2,72 @@ package ru.panyukovnn.reminder.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.stickers.Sticker;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.panyukovnn.reminder.config.BotApi;
 
 import java.util.Optional;
-
-import static ru.panyukovnn.reminder.config.ReminderConfig.TG_UPDATE_SINK;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReminderListener {
 
-    @EventListener(ApplicationStartedEvent.class)
-    public void onStartup() {
-        TG_UPDATE_SINK.asFlux()
-                .doOnNext(update -> {
-                    if (update == null) {
-                        return;
-                    }
+    private final BotApi botApi;
 
-                    Message message = update.getMessage() != null
-                            ? update.getMessage()
-                            : update.getChannelPost();
+    @EventListener(Update.class)
+    public void onStartup(Update update) {
+        if (update == null) {
+            return;
+        }
 
-                    if (message == null) {
-                        log.warn("Получено пустое сообщение: {}", update);
+        Message message = update.getMessage() != null
+            ? update.getMessage()
+            : update.getChannelPost();
 
-                        return;
-                    }
+        if (message == null) {
+            log.warn("Получено пустое сообщение: {}", update);
 
-                    User user = message.getFrom();
+            return;
+        }
 
-                    String username = Optional.ofNullable(user).map(User::getUserName).orElse("undefined");
-                    String firstname = Optional.ofNullable(user).map(User::getFirstName).orElse("undefined");
-                    String lastname = Optional.ofNullable(user).map(User::getLastName).orElse("undefined");
+        processStickerIfAny(message);
 
-                    String messageText = Optional.ofNullable(message.getText())
-                            .orElse("undefined");
+        User user = message.getFrom();
 
-                    Long chatId = Optional.ofNullable(message.getChatId())
-                            .orElse(0L);
+        String username = Optional.ofNullable(user).map(User::getUserName).orElse("undefined");
+        String firstname = Optional.ofNullable(user).map(User::getFirstName).orElse("undefined");
+        String lastname = Optional.ofNullable(user).map(User::getLastName).orElse("undefined");
 
-                    log.info("Входящее update сообщение в чате: {}. Текст: {}. От: {}", chatId, messageText, username + " " + firstname + " " + lastname + " ");
-                })
-                .subscribe();
+        String messageText = Optional.ofNullable(message.getText())
+            .orElse("undefined");
+
+        Long chatId = Optional.ofNullable(message.getChatId())
+            .orElse(0L);
+
+        log.info("Входящее update сообщение в чате: {}. Текст: {}. От: {}", chatId, messageText, username + " " + firstname + " " + lastname + " ");
+    }
+
+    private void processStickerIfAny(Message message) {
+        if (message.getSticker() != null) {
+            Sticker sticker = message.getSticker();
+
+            SendMessage sendMessage = new SendMessage();
+
+            sendMessage.setChatId(message.getChatId());
+            sendMessage.setText("Идентификатор стикера: " + sticker.getFileId() + "\nНаименование стикер сета: " + sticker.getSetName());
+
+            try {
+                botApi.execute(sendMessage);
+            } catch (TelegramApiException e) {
+                log.error("Ошибка при отправке сообдщения о стикере клиенту {}: {}", message.getChatId(), e.getMessage(), e);
+            }
+        }
     }
 }

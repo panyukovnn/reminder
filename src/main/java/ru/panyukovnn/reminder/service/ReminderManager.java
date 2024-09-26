@@ -6,6 +6,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.telegram.telegrambots.meta.api.objects.stickers.Sticker;
 import reactor.core.publisher.Mono;
 import ru.panyukovnn.reminder.dto.NotificationInfo;
 import ru.panyukovnn.reminder.dto.TextMessageConfig;
@@ -37,6 +38,13 @@ public class ReminderManager {
         Mono<?> stickerSendMono = getStickerSendMono(notificationInfo, chatId);
 
         stickerSendMono
+            .then(Mono.defer(() -> {
+                if (StringUtils.hasText(notificationInfo.getVanguardMessage())) {
+                    return messageSender.sendMessage(chatId, notificationInfo.getVanguardMessage());
+                }
+
+                return Mono.empty().then();
+                }))
                 .then(messageSender.sendMessage(chatId, formatMessage(notificationInfo.getTextMessage()))
                         .doOnSuccess(item -> log.info("Отправка напоминания '{}' выполнена успешно.", notificationInfo.getName())))
                 .onErrorResume(e -> {
@@ -52,18 +60,21 @@ public class ReminderManager {
     }
 
     private Mono<?> getStickerSendMono(NotificationInfo notificationInfo, String chatId) {
-        return Mono.defer(() -> {
-            if (!CollectionUtils.isEmpty(notificationInfo.getStickers())) {
-                return messageSender.sendSticker(chatId, messagePicker.pickRandomSticker(notificationInfo.getStickers()))
-                        .onErrorResume(e -> {
-                            log.error("Непредвиденная ошибка при отправке стикера: {}. Во время обработки напоминания: {}", e.getMessage(), notificationInfo.getName(), e);
+        return Mono.defer(() -> messagePicker.extractStickerSet(notificationInfo.getStickerSetName())
+            .map(stickerSet -> {
+                List<String> stickerIds = stickerSet.getStickers().stream()
+                    .map(Sticker::getFileId)
+                    .toList();
 
-                            return Mono.empty();
-                        });
-            }
+                return sendStickerMono(notificationInfo.getName(), stickerIds, chatId);
+            })
+            .orElseGet(() -> {
+                if (!CollectionUtils.isEmpty(notificationInfo.getStickers())) {
+                    return sendStickerMono(notificationInfo.getName(), notificationInfo.getStickers(), chatId);
+                }
 
-            return Mono.empty().then();
-        });
+                return Mono.empty().then();
+            }));
     }
 
     private String formatMessage(TextMessageConfig textMessage) {
@@ -84,5 +95,15 @@ public class ReminderManager {
         }
 
         return String.join("\n", messageLines);
+    }
+
+    private Mono<Void> sendStickerMono(String notificationInfoName, List<String> stickerFileIds, String chatId) {
+        return messageSender.sendSticker(chatId, messagePicker.pickRandomSticker(stickerFileIds))
+            .onErrorResume(e -> {
+                log.error("Непредвиденная ошибка при отправке стикера: {}. Во время обработки напоминания: {}", e.getMessage(), notificationInfoName, e);
+
+                return Mono.empty();
+            })
+            .then();
     }
 }

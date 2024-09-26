@@ -26,6 +26,16 @@ public class NotificationInfo {
 
     private List<String> stickers;
 
+    /**
+     * Стикер сет имеет преимущество над стикерами
+     */
+    private String stickerSetName;
+
+    /**
+     * Сообщение, которе будет отправлено перед основным (нужно для смайликов)
+     */
+    private String vanguardMessage;
+    
     @Valid
     private TextMessageConfig textMessage;
 
