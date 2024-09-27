@@ -1,8 +1,6 @@
 package ru.panyukovnn.reminder.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.meta.api.methods.stickers.GetStickerSet;
@@ -16,8 +14,6 @@ import java.util.List;
 @Service
 public class MessagePicker {
 
-    @Lazy // TODO
-    @Autowired
     private BotApi botApi;
 
     public String pickRandomSticker(List<String> stickerIds) {

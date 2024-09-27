@@ -55,8 +55,15 @@ public class ReminderListener {
     }
 
     private void processStickerIfAny(Message message) {
-        if (message.getSticker() != null) {
+        if (message.getSticker() != null && message.getFrom() != null) {
             Sticker sticker = message.getSticker();
+            User user = message.getFrom();
+
+            if (!message.getChatId().equals(user.getId())) {
+                // Если это не персональная переписка, то не присылаем стикер
+
+                return;
+            }
 
             SendMessage sendMessage = new SendMessage();
 

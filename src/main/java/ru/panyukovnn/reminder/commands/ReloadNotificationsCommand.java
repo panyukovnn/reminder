@@ -2,6 +2,7 @@ package ru.panyukovnn.reminder.commands;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -15,6 +16,7 @@ import ru.panyukovnn.reminder.service.NotificationInfoLoader;
 @Service
 public class ReloadNotificationsCommand extends BotCommand {
 
+    @Lazy
     @Autowired
     private NotificationInfoLoader notificationInfoLoader;
 
