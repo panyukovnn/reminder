@@ -24,12 +24,11 @@ public class NotificationInfo {
     @NotEmpty(message = "Не задан cron")
     private String cron;
 
-    private List<String> stickers;
-
     /**
-     * Стикер сет имеет преимущество над стикерами
+     * Стикеры из стикерсета дополняются значениями из stickers
      */
     private String stickerSetName;
+    private List<String> stickers;
 
     /**
      * Сообщение, которе будет отправлено перед основным (нужно для смайликов)

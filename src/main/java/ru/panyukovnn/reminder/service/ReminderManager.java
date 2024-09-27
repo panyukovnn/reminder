@@ -15,6 +15,7 @@ import ru.panyukovnn.reminder.service.messagesender.MessageSender;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -32,8 +33,8 @@ public class ReminderManager {
         }
 
         String chatId = isDebug
-                ? reminderProperty.getDebugChatId()
-                : notificationInfo.getChatId();
+            ? reminderProperty.getDebugChatId()
+            : notificationInfo.getChatId();
 
         Mono<?> stickerSendMono = getStickerSendMono(notificationInfo, chatId);
 
@@ -44,37 +45,37 @@ public class ReminderManager {
                 }
 
                 return Mono.empty().then();
-                }))
-                .then(messageSender.sendMessage(chatId, formatMessage(notificationInfo.getTextMessage()))
-                        .doOnSuccess(item -> log.info("Отправка напоминания '{}' выполнена успешно.", notificationInfo.getName())))
-                .onErrorResume(e -> {
-                    String errMsg = "Возникла ошибка при отправке сообщения: " + e.getMessage() + ". Во время обработки напоминания: " + notificationInfo.getName();
+            }))
+            .then(messageSender.sendMessage(chatId, formatMessage(notificationInfo.getTextMessage()))
+                .doOnSuccess(item -> log.info("Отправка напоминания '{}' выполнена успешно.", notificationInfo.getName())))
+            .onErrorResume(e -> {
+                String errMsg = "Возникла ошибка при отправке сообщения: " + e.getMessage() + ". Во время обработки напоминания: " + notificationInfo.getName();
 
-                    log.error(errMsg, e);
+                log.error(errMsg, e);
 
-                    return messageSender.sendMessage(reminderProperty.getDebugChatId(), errMsg)
-                            .doOnError(ex -> log.info("Произошла ошибка при отрпавке debug сообщения: {}. Во время обработки напоминания: {}", ex.getMessage(), notificationInfo.getName(), ex))
-                            .doOnSuccess(item -> log.info("Отправка информации об исключительной ситуации выполнена успешно. Во время обработки напоминания: {}", notificationInfo.getName()));
-                })
-                .subscribe();
+                return messageSender.sendMessage(reminderProperty.getDebugChatId(), errMsg)
+                    .doOnError(ex -> log.info("Произошла ошибка при отрпавке debug сообщения: {}. Во время обработки напоминания: {}", ex.getMessage(), notificationInfo.getName(), ex))
+                    .doOnSuccess(item -> log.info("Отправка информации об исключительной ситуации выполнена успешно. Во время обработки напоминания: {}", notificationInfo.getName()));
+            })
+            .subscribe();
     }
 
     private Mono<?> getStickerSendMono(NotificationInfo notificationInfo, String chatId) {
-        return Mono.defer(() -> messagePicker.extractStickerSet(notificationInfo.getStickerSetName())
-            .map(stickerSet -> {
-                List<String> stickerIds = stickerSet.getStickers().stream()
-                    .map(Sticker::getFileId)
+        return Mono.defer(() -> {
+            List<String> stickerSetIds = messagePicker.extractStickerSetStickers(notificationInfo.getStickerSetName());
+
+            if (!CollectionUtils.isEmpty(notificationInfo.getStickers())) {
+                stickerSetIds = Stream.concat(stickerSetIds.stream(), notificationInfo.getStickers().stream())
                     .toList();
 
-                return sendStickerMono(notificationInfo.getName(), stickerIds, chatId);
-            })
-            .orElseGet(() -> {
-                if (!CollectionUtils.isEmpty(notificationInfo.getStickers())) {
-                    return sendStickerMono(notificationInfo.getName(), notificationInfo.getStickers(), chatId);
-                }
+            }
 
+            if (stickerSetIds.isEmpty()) {
                 return Mono.empty().then();
-            }));
+            }
+
+            return sendStickerMono(notificationInfo.getName(), stickerSetIds, chatId);
+        });
     }
 
     private String formatMessage(TextMessageConfig textMessage) {

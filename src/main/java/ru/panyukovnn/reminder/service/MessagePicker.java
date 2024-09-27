@@ -1,18 +1,16 @@
 package ru.panyukovnn.reminder.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.meta.api.methods.stickers.GetStickerSet;
-import org.telegram.telegrambots.meta.api.objects.stickers.StickerSet;
+import org.telegram.telegrambots.meta.api.objects.stickers.Sticker;
 import ru.panyukovnn.reminder.config.BotApi;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -38,19 +36,22 @@ public class MessagePicker {
         return LocalDate.now().getDayOfMonth() % listSize;
     }
 
-    public Optional<StickerSet> extractStickerSet(String stickerSetName) {
+    public List<String> extractStickerSetStickers(String stickerSetName) {
         if (!StringUtils.hasText(stickerSetName)) {
-            return Optional.empty();
+            return List.of();
         }
 
         try {
-            return Optional.of(botApi.execute(GetStickerSet.builder()
+            return botApi.execute(GetStickerSet.builder()
                 .name(stickerSetName)
-                .build()));
+                .build())
+                .getStickers().stream()
+                .map(Sticker::getFileId)
+                .toList();
         } catch (Exception e) {
             log.warn("Ошибка при запросе стикерсета по наименованию: {}", stickerSetName, e);
 
-            return Optional.empty();
+            return List.of();
         }
     }
 }
