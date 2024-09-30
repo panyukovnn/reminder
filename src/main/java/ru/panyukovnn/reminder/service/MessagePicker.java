@@ -1,5 +1,6 @@
 package ru.panyukovnn.reminder.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -12,9 +13,10 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MessagePicker {
 
-    private BotApi botApi;
+    private final BotApi botApi;
 
     public String pickRandomSticker(List<String> stickerIds) {
         int todayMessageIndex = randomIndexByDayOfMonth(stickerIds.size());
