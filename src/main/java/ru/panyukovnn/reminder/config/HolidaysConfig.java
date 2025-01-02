@@ -47,13 +47,13 @@ public class HolidaysConfig {
             }
 
             return yearHolidaysFromFile.getMonths().stream()
-                    .flatMap(it -> {
-                        Month month = Month.of(it.getMonth());
+                .flatMap(it -> {
+                    Month month = Month.of(it.getMonth());
 
-                        return Arrays.stream(it.getDays().split(","))
-                                .map(dayNum -> LocalDate.of(year.getValue(), month, Integer.parseInt(dayNum)));
-                    })
-                    .collect(Collectors.toUnmodifiableSet());
+                    return Arrays.stream(it.getDays().split(","))
+                        .map(dayNum -> LocalDate.of(year.getValue(), month, Integer.parseInt(dayNum)));
+                })
+                .collect(Collectors.toUnmodifiableSet());
         } catch (Exception e) {
             log.error("Ошибка чтения списка выходных дней из файла \"{}\": {}", holidaysFileName, e.getMessage(), e);
 

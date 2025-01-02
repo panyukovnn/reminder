@@ -46,3 +46,7 @@ bootJar {
 tasks.withType(Test) {
     systemProperty "file.encoding", "UTF-8"
 }
+
+jar {
+    enabled = false
+}
